@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import os
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
+import pytz
 
 load_dotenv()
 
@@ -12,6 +13,9 @@ app = Flask(__name__)
 scheduler = BackgroundScheduler()
 
 SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')  # Ensure your SendGrid API key is in the .env file
+
+# Set your local timezone (India Standard Time - IST)
+IST = pytz.timezone('Asia/Kolkata')
 
 def start_scheduler():
     if not scheduler.running:
@@ -29,9 +33,13 @@ def schedule_email():
     message = request.form['message']
     datetime_str = request.form['datetime']
 
+    # Convert the user input datetime to a datetime object
     send_time = datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M')
 
-    # Schedule the email to be sent at the specified time
+    # Convert the send_time (assumed to be in UTC) to IST
+    send_time = pytz.utc.localize(send_time).astimezone(IST)
+
+    # Schedule the email to be sent at the specified time (IST)
     scheduler.add_job(
         send_email,
         'date',
