@@ -13,6 +13,7 @@ app = Flask(__name__)
 scheduler = BackgroundScheduler()
 
 SENDINBLUE_API_KEY = os.getenv('API_KEY')
+print(SENDINBLUE_API_KEY)
 # Brevo (Sendinblue) API setup
 configuration = sib_api_v3_sdk.Configuration()
 configuration.api_key['api-key'] = SENDINBLUE_API_KEY   # Replace with your Brevo API key
