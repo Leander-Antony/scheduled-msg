@@ -16,6 +16,7 @@ SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')  # Ensure your SendGrid API key
 
 # Set your local timezone (India Standard Time - IST)
 IST = pytz.timezone('Asia/Kolkata')
+UTC = pytz.utc  # UTC timezone
 
 def start_scheduler():
     if not scheduler.running:
@@ -36,14 +37,15 @@ def schedule_email():
     # Convert the user input datetime to a datetime object
     send_time = datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M')
 
-    # Convert the send_time (assumed to be in UTC) to IST
-    send_time = pytz.utc.localize(send_time).astimezone(IST)
+    # Convert the send_time from IST to UTC
+    send_time = IST.localize(send_time)  # Localize the time in IST
+    send_time_utc = send_time.astimezone(UTC)  # Convert the localized time to UTC
 
-    # Schedule the email to be sent at the specified time (IST)
+    # Schedule the email to be sent at the specified time (in UTC)
     scheduler.add_job(
         send_email,
         'date',
-        run_date=send_time,
+        run_date=send_time_utc,
         args=[email, message]
     )
 
