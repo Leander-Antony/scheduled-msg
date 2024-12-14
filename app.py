@@ -1,20 +1,17 @@
 from flask import Flask, render_template, request, redirect, url_for
-import smtplib
-from email.mime.text import MIMEText
 from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
-import time
 from dotenv import load_dotenv
 import os
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 
 load_dotenv()
+
 app = Flask(__name__)
 scheduler = BackgroundScheduler()
 
-SMTP_SERVER = 'smtp.gmail.com'
-SMTP_PORT = 587
-SMTP_USER = os.getenv('SMTP_USER')  
-SMTP_PASS = os.getenv('SMTP_PASS')
+SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')  # Ensure your SendGrid API key is in the .env file
 
 def start_scheduler():
     if not scheduler.running:
@@ -34,6 +31,7 @@ def schedule_email():
 
     send_time = datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M')
 
+    # Schedule the email to be sent at the specified time
     scheduler.add_job(
         send_email,
         'date',
@@ -43,23 +41,29 @@ def schedule_email():
 
     return redirect(url_for('index'))
 
-
 def send_email(email, message):
     subject = "I am your past"
-    sender = SMTP_USER
+    sender = 'yourpastishereforyou@gmail.com'  # Replace with your sender email
     html_content = f"<html><body><h1>{message}</h1></body></html>"
 
-    try:
-        msg = MIMEText(html_content, 'html')
-        msg['Subject'] = subject
-        msg['From'] = sender
-        msg['To'] = email
+    # Create a SendGrid Mail object
+    message = Mail(
+        from_email=sender,
+        to_emails=email,
+        subject=subject,
+        html_content=html_content
+    )
 
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-            server.starttls()
-            server.login(SMTP_USER, SMTP_PASS)
-            server.sendmail(sender, [email], msg.as_string())
+    try:
+        # Send email using SendGrid API
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        response = sg.send(message)
+        
+        # Print SendGrid response for debugging
         print(f"Email sent to {email}")
+        print(response.status_code)
+        print(response.body)
+        print(response.headers)
     except Exception as e:
         print(f"Error sending email: {e}")
 
